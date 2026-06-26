@@ -51,13 +51,21 @@ Synthetic AirLLM model for a 24-block model with a working-set target of ~8 bloc
 
 **The finding:** the two backends do *identical* per-block compute in the *same order*; they differ only in the memory policy. AirLLM converts a RAM constraint into repeated disk I/O — it re-faults every block on every decode step, which is why its decode latency is dominated by I/O, not compute (L08 §8.3). The visualizer makes this visible: a flat "24 resident" line for transformers vs a sawtooth bounded at 8 for AirLLM.
 
-## 6. Honesty: what we could and could not run
-We installed `airllm==2.11.0` to capture a *real* AirLLM trace, but it is **unimportable in this environment**: it imports `optimum.bettertransformer`, which the resolved `optimum>=2.2` has removed. Pinning an older `optimum` conflicts with `transformers 5.x`. This is itself a finding — **operating giant models locally is dependency-fragile**, the practical friction L08 highlights. Consequently:
+## 6. Honesty: what we could and could not run — a *verified* fragility chain
+We seriously attempted a real AirLLM CPU run on `airllm==2.11.0`. Rather than one blocker, we empirically hit **five**, each fixed in turn until a sixth, architectural one:
 
-- The **execution order, block count, sizes, and timing** in §4 are *measured* (on the same instrumentation AirLLM would use).
-- The **bounded-working-set memory dynamics** in §5 are *modeled*, not measured on AirLLM itself, and labeled as such everywhere.
+1. **`optimum.bettertransformer` removed** (in the resolved `optimum>=2.2`). AirLLM imports it at module load → `ModuleNotFoundError`. *Fixed* with a ~6-line no-op `BetterTransformer.transform` shim (modern transformers has SDPA built in).
+2. **`sentencepiece` missing** — AirLLM eagerly imports a Baichuan tokenizer at package load. *Fixed* by installing it.
+3. **Single-file model rejected** — AirLLM asserts `model.safetensors.index.json` exists; Qwen2.5-0.5B ships unsharded. *Fixed* by re-saving with `max_shard_size` to force an index.
+4. **Tied embeddings crash the splitter** — Qwen2.5-0.5B ties `lm_head` to `embed_tokens`, so `lm_head` is absent from the index and AirLLM's `split_and_save_layers` does `shards[0]` on an empty list → `IndexError`. *Fixed* by untying/materializing `lm_head` before sharding.
+5. **CUDA hard-wired in init** — even with `device="cpu", dtype=float32`, `AirLLMBaseModel.init_model()` reaches a CUDA call (`Torch not compiled with CUDA enabled`). AirLLM's design streams layers *to a GPU* with limited VRAM; clean CPU-only execution is not supported in 2.11 on this platform without patching internals.
 
-localforge handles the broken dependency the way it handles any missing engine: `AirLLMBackend.is_available()` detects the unusable import and the runner records a **skipped** row with the exact reason — the comparison never crashes (`src/localforge/backends/airllm_backend.py`). Reproduce: `uv sync --extra airllm` then `uv run localforge run --backend airllm --model Qwen/Qwen2.5-0.5B-Instruct` → skipped with the optimum reason.
+**This is the verified finding:** running a giant-model tool like AirLLM locally is operationally fragile — it took five fixes to get to a sixth, architectural wall (it wants a GPU). This is precisely the friction L08 frames; localforge's value is making it *visible and non-fatal*. Consequently:
+
+- §4 execution numbers are **measured** (real per-block hooks on the actual model — the same instrumentation AirLLM's streaming would feed).
+- §5 bounded-working-set memory dynamics are **modeled**, explicitly labeled, because AirLLM itself would not run CPU-only here.
+
+localforge degrades gracefully: `AirLLMBackend.is_available()` detects the unusable import and the runner records a **skipped** row with the exact reason — the comparison never crashes (`src/localforge/backends/airllm_backend.py`). Reproduce the chain: `uv sync --extra airllm` then `uv run localforge run --backend airllm --model Qwen/Qwen2.5-0.5B-Instruct` → skipped with the optimum reason. The full investigation script and the five fixes are recorded here for a GPU host, where steps 1–4 plus a real device would complete the run.
 
 ## 7. Reproduce
 ```bash

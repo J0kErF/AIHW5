@@ -18,6 +18,7 @@ from huggingface_hub.errors import (
 
 from localforge.config.settings import Settings
 from localforge.core.errors import AuthError, ConfigError
+from localforge.core.gatekeeper import ApiGatekeeper, RateLimitConfig
 from localforge.core.logging import get_logger, register_secret
 from localforge.models.formats import detect_format, weight_bytes
 from localforge.models.registry import ModelInfo, ModelRegistry
@@ -43,8 +44,18 @@ def pull_model(model_id: str, settings: Settings, *, force: bool = False) -> Mod
         register_secret(token)
 
     hf_cache = settings.cache_dir / "hf"
+    # Route the download through the gatekeeper: retry transient network errors.
+    gatekeeper = ApiGatekeeper(RateLimitConfig(max_retries=2, backoff_s=1.0))
     try:
-        local_dir = Path(snapshot_download(repo_id=model_id, token=token, cache_dir=str(hf_cache)))
+        local_dir = Path(
+            gatekeeper.execute(
+                snapshot_download,
+                repo_id=model_id,
+                token=token,
+                cache_dir=str(hf_cache),
+                retry_on=(TimeoutError, ConnectionError),
+            )
+        )
     except GatedRepoError as exc:
         raise AuthError(
             f"{model_id} is gated — accept its license on the Hub and set HF_TOKEN"

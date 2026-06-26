@@ -21,7 +21,8 @@ from localforge.finetune.adapters import (
     quantization_config_for,
     trainable_summary,
 )
-from localforge.finetune.dataset import Example, load_sft
+from localforge.finetune.dataset import load_sft
+from localforge.finetune.generate import format_example, generate_reply
 from localforge.finetune.olora import apply_olora_init
 
 _log = get_logger(__name__)
@@ -44,37 +45,6 @@ class FineTuneResult:
     @property
     def trainable_pct(self) -> float:
         return 100.0 * self.trainable_params / max(self.total_params, 1)
-
-
-def _format(tokenizer: Any, ex: Example) -> str:
-    if getattr(tokenizer, "chat_template", None):
-        messages = [
-            {"role": "user", "content": ex.instruction},
-            {"role": "assistant", "content": ex.response},
-        ]
-        return str(tokenizer.apply_chat_template(messages, tokenize=False))
-    return f"{ex.instruction}\n{ex.response}"
-
-
-def _generate(model: Any, tokenizer: Any, prompt: str, max_new: int = 16) -> str:
-    import torch
-
-    if getattr(tokenizer, "chat_template", None):
-        enc = tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt}],
-            add_generation_prompt=True,
-            return_tensors="pt",
-            return_dict=True,
-        )
-    else:
-        enc = tokenizer(prompt, return_tensors="pt")
-    prompt_len = enc["input_ids"].shape[1]
-    with torch.no_grad():
-        out = model.generate(
-            **enc, max_new_tokens=max_new, do_sample=False, pad_token_id=tokenizer.eos_token_id
-        )
-    text: str = tokenizer.decode(out[0][prompt_len:], skip_special_tokens=True)
-    return text.strip()
 
 
 def train_adapter(
@@ -124,7 +94,7 @@ def train_adapter(
         100.0 * summary["trainable"] / max(summary["total"], 1),
     )
 
-    before = _generate(model, tokenizer, _HELDOUT)
+    before = generate_reply(model, tokenizer, _HELDOUT)
 
     optimizer = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=lr)
     model.train()
@@ -132,7 +102,7 @@ def train_adapter(
     for step in range(steps):
         ex = examples[step % len(examples)]
         enc = tokenizer(
-            _format(tokenizer, ex),
+            format_example(tokenizer, ex),
             return_tensors="pt",
             truncation=True,
             max_length=max_len,
@@ -147,7 +117,7 @@ def train_adapter(
         _log.info("step %d/%d loss=%.4f", step + 1, steps, final_loss)
 
     model.eval()
-    after = _generate(model, tokenizer, _HELDOUT)
+    after = generate_reply(model, tokenizer, _HELDOUT)
 
     out_dir = out_dir or (settings.cache_dir / "adapters" / method.value)
     out_dir.mkdir(parents=True, exist_ok=True)

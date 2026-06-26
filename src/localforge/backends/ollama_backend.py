@@ -20,6 +20,7 @@ from localforge.backends.base import register
 from localforge.config.settings import load_settings
 from localforge.core.capabilities import probe_ollama
 from localforge.core.errors import BackendUnavailable
+from localforge.core.gatekeeper import ApiGatekeeper, RateLimitConfig
 from localforge.core.types import RunSpec
 
 
@@ -30,6 +31,8 @@ class OllamaBackend:
     def __init__(self) -> None:
         self.note: str | None = None
         self._base_url = load_settings().ollama_base_url.rstrip("/")
+        # Centralized outbound-call policy: retry transient network blips.
+        self._gatekeeper = ApiGatekeeper(RateLimitConfig(min_interval_s=0.0, max_retries=2))
 
     def is_available(self) -> tuple[bool, str]:
         return probe_ollama(self._base_url)
@@ -58,7 +61,12 @@ class OllamaBackend:
             method="POST",
         )
         try:
-            response = urllib.request.urlopen(request, timeout=120)  # noqa: S310 (localhost)
+            response = self._gatekeeper.execute(
+                urllib.request.urlopen,  # noqa: S310 (localhost)
+                request,
+                timeout=120,
+                retry_on=(TimeoutError, ConnectionError),
+            )
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", "ignore")[:200]
             raise BackendUnavailable(

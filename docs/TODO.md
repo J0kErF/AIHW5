@@ -22,11 +22,12 @@
 - [x] T11 Matrix + charts + report.html — 3 PNG, skipped rows shown, Jinja2 template
 - [x] T12 CLI (pull/baseline/run/compare) — `--help` light; **real CPU `compare` validated** (transformers 9.7 tok/s, 3147 MB; ollama+airllm skip cleanly → report.html)
 
-## Phase 5 — Fine-tuning & Paging Visualizer (originality)
-- [ ] T13 PEFT adapters + OLoRA QR fallback — only A/B trainable; orthonormal init tested
-- [ ] T14 Dataset loader + trainer — CPU LoRA completes, before/after logged, adapter loadable
-- [ ] T15 Paging tracer/events/replay — real AirLLM emits events; replay works without AirLLM
-- [ ] T16 Visualizer TUI + static + visualize/finetune cmds — `--replay` exports PNG/HTML, no GPU
+## Phase 5 — Fine-tuning & Paging Visualizer (originality) ✅
+- [x] T13 PEFT adapters + OLoRA QR fallback — only A/B trainable; orthonormal init numerically tested
+- [x] T14 Dataset loader + trainer — **real CPU LoRA train validated** (25.6s, <5% trainable, before/after, adapter saved)
+- [x] T15 Paging tracer/events/replay — Observer + JSONL + real forward-hook instrumentation + synthetic model; replay works without AirLLM
+- [x] T16 Visualizer TUI + static + visualize/finetune cmds — **real per-block capture validated** (Qwen 144 events); PNG/HTML/JSONL export; ASCII-safe plain mode
+- [x] T9a/T15a Empirical AirLLM RE — RE_AIRLLM.md: measured transformers trace (24/24 resident, 0 evict) vs modeled AirLLM (8/24, 40 evict); airllm 2.11/optimum 2.2 incompat documented + handled by skip-with-reason
 
 ## Phase 6 — Quality, docs, release
 - [ ] T17 Test hardening + CI green — ≥80% core coverage, green with no engines

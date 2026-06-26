@@ -185,5 +185,85 @@ def compare(
     console.print(f"\n[green]report:[/] {paths.report_html}")
 
 
+@app.command()
+def finetune(
+    model: str = typer.Option("Qwen/Qwen2.5-0.5B-Instruct", help="Base HF model."),
+    method: str = typer.Option("lora", help="lora | qlora | olora."),
+    data: Path = typer.Option(
+        Path("data/finetune/tiny_sft.jsonl"), exists=True, help="JSONL SFT dataset."
+    ),
+    steps: int = typer.Option(12, min=1, help="Training steps."),
+    out: Path | None = typer.Option(None, help="Adapter output dir."),
+) -> None:
+    """Train a LoRA/QLoRA/OLoRA adapter and show before/after generations."""
+    configure_logging(logging.INFO)
+    from localforge.config.settings import load_settings
+    from localforge.finetune.adapters import FineTuneMethod
+    from localforge.finetune.trainer import train_adapter
+
+    try:
+        ft_method = FineTuneMethod(method.lower())
+    except ValueError:
+        _fail(ConfigError(f"unknown method {method!r}; use lora|qlora|olora"))
+
+    result = train_adapter(model, ft_method, data, load_settings(), steps=steps, out_dir=out)
+    table = Table(header_style="bold white on #01133f")
+    table.add_column("field")
+    table.add_column("value")
+    table.add_row("method", result.method.value)
+    table.add_row("trainable params", f"{result.trainable_params:,} ({result.trainable_pct:.3f}%)")
+    table.add_row("total params", f"{result.total_params:,}")
+    table.add_row("final loss", f"{result.final_loss:.4f}")
+    table.add_row("adapter", result.adapter_path)
+    if result.note:
+        table.add_row("note", result.note)
+    console.print(table)
+    console.print(f"\n[bold]before:[/] {result.before}")
+    console.print(f"[bold]after :[/] {result.after}")
+
+
+@app.command()
+def visualize(
+    replay: Path | None = typer.Option(None, exists=True, help="Replay a recorded JSONL stream."),
+    model: str | None = typer.Option(None, help="Capture a real per-block trace from this model."),
+    layers: int = typer.Option(32, help="Block count for the synthetic trace."),
+    max_new_tokens: int = typer.Option(16, min=1, help="Tokens for live capture."),
+    no_tui: bool = typer.Option(
+        False, "--no-tui", help="Print a plain summary instead of the TUI."
+    ),
+    results_dir: Path = typer.Option(_DEFAULT_RESULTS, help="Where to write artifacts."),
+) -> None:
+    """Visualize AirLLM-style paging: live capture, replay, or synthetic model."""
+    configure_logging(logging.WARNING)
+    from localforge.paging.airllm_hook import synthesize_airllm_trace
+    from localforge.paging.events import read_stream
+    from localforge.viz.render import export_paging_artifacts
+    from localforge.viz.tui import PagingApp, plain_summary
+
+    if replay is not None:
+        events = read_stream(replay)
+        title = f"Paging trace (replay: {replay.name})"
+    elif model is not None:
+        from localforge.viz.capture import capture_transformers_trace
+
+        console.print(f"[dim]capturing per-block trace from {model}...[/]")
+        events = capture_transformers_trace(
+            model, "Explain virtual memory.", max_new_tokens=max_new_tokens
+        )
+        title = f"Per-block execution trace ({model})"
+    else:
+        events = synthesize_airllm_trace(n_layers=layers)
+        title = "Synthetic AirLLM paging model"
+
+    n_layers = (max(e.layer for e in events) + 1) if events else layers
+    artifacts = export_paging_artifacts(events, results_dir / "paging", title=title)
+    console.print(f"[green]artifacts:[/] {artifacts.png}  ·  {artifacts.html}")
+
+    if no_tui:
+        console.print(plain_summary(events, n_layers))
+    else:
+        PagingApp(events, n_layers).run()
+
+
 if __name__ == "__main__":
     app()

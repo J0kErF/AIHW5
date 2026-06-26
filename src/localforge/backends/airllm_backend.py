@@ -38,10 +38,24 @@ class AirLLMBackend:
         self._ceiling_mb = load_settings().airllm_ram_ceiling_mb
 
     def is_available(self) -> tuple[bool, str]:
-        return probe_airllm()
+        present, reason = probe_airllm()
+        if not present:
+            return (False, reason)
+        # The package can be present but unimportable (e.g. airllm 2.11 expects
+        # optimum.bettertransformer, removed in optimum>=2). Verify it imports.
+        try:
+            import airllm  # noqa: F401
+        except Exception as exc:
+            return (False, f"airllm present but unusable: {exc}")
+        return (True, "airllm installed")
 
     def load(self, spec: RunSpec) -> None:
-        from airllm import AutoModel  # lazy import: optional dependency
+        try:
+            from airllm import AutoModel  # lazy import: optional dependency
+        except ImportError as exc:
+            from localforge.core.errors import BackendUnavailable
+
+            raise BackendUnavailable(self.name, f"airllm import failed: {exc}") from exc
 
         # AirLLM streams layers from the HF cache; compression keeps the per-layer
         # working set small enough for a CPU-only box.

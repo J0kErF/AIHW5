@@ -1,0 +1,15 @@
+# CPU-only smoke suite: the three-backend comparison from L08 §9.
+# Unavailable backends (no Ollama daemon / airllm not installed) are reported
+# as skipped rows, not errors. See docs/SPECIFICATION.md §3.4.
+suite_id: demo
+models:
+  - "Qwen/Qwen2.5-0.5B-Instruct"
+backends:
+  - transformers
+  - ollama
+  - airllm
+dtypes:
+  - fp32
+prompt: "Explain virtual memory in one sentence."
+max_new_tokens: 64
+seed: 0

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# localforge runtime artifacts (regenerated; demo report is force-added below)
+results/runs/
+results/paging/
+results/baseline/
+results/suites/
+results/traces/
+
+# Reverse-engineered external source (cloned at pinned commit, never committed)
+external/
+
+# Model / HF cache
+.cache/
+*.safetensors
+*.gguf
+*.bin
+
+# Keep the committed demo report
+!results/reports/
+!results/reports/**
+
+# OS
+.DS_Store
+Thumbs.db

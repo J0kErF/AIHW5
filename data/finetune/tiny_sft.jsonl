@@ -1,0 +1,8 @@
+{"instruction": "Define paging in one sentence.", "response": "Paging is an operating-system memory-management scheme that moves fixed-size blocks of data between RAM and disk on demand."}
+{"instruction": "What is a page fault?", "response": "A page fault occurs when a program accesses a page that is not currently resident in RAM, forcing the OS to load it from disk."}
+{"instruction": "What does mmap do?", "response": "mmap maps a file into a process's address space so its bytes can be accessed lazily through the OS page cache without an explicit read."}
+{"instruction": "Explain LoRA briefly.", "response": "LoRA freezes the base weights and learns a small low-rank update W = W0 + BA, training only the A and B matrices."}
+{"instruction": "What is AirLLM in one sentence?", "response": "AirLLM runs a large language model layer by layer, streaming each transformer block from disk so a huge model fits in limited RAM."}
+{"instruction": "Why separate prefill from decode?", "response": "Prefill processes the whole prompt in one compute-bound pass, while decode generates tokens one at a time and is bound by memory bandwidth, so they scale differently."}
+{"instruction": "What is quantization?", "response": "Quantization reduces the numerical precision of model weights, such as to 4-bit NF4, to shrink memory use at a small accuracy cost."}
+{"instruction": "Define the memory hierarchy.", "response": "The memory hierarchy ranks storage from fast and small to slow and large: registers, cache, RAM, then SSD or NVMe disk."}

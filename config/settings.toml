@@ -1,0 +1,17 @@
+# localforge default settings. Overridden by .env, then environment variables,
+# then explicit CLI flags. See src/localforge/config/settings.py.
+
+ollama_base_url = "http://localhost:11434/v1"
+
+# AirLLM layer-streaming working-set target (MB). The visualizer is most
+# meaningful when this is well below the full model size. See DECISIONS.md D1.
+airllm_ram_ceiling_mb = 4096
+
+# CI / smoke model: small enough to run on CPU quickly.
+default_model = "Qwen/Qwen2.5-0.5B-Instruct"
+
+# Larger model used for the report showcase (AirLLM "big model, small RAM" point).
+showcase_model = "Qwen/Qwen2.5-3B-Instruct"
+
+# Global RNG seed for deterministic greedy runs.
+seed = 0

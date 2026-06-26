@@ -1,0 +1,17 @@
+# Scale-up suite for the report showcase. Mixes model sizes to expose the
+# load-time / peak-RAM / decode-throughput trade-offs across backends.
+# dtype nf4 is CUDA-only and will be reported as a documented fallback on CPU.
+suite_id: full
+models:
+  - "Qwen/Qwen2.5-0.5B-Instruct"
+  - "Qwen/Qwen2.5-3B-Instruct"
+backends:
+  - transformers
+  - ollama
+  - airllm
+dtypes:
+  - fp32
+  - nf4
+prompt: "Explain how an operating system pages memory between RAM and disk."
+max_new_tokens: 128
+seed: 0

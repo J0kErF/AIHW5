@@ -65,6 +65,8 @@ ignore = ["E501"]  # line length handled by formatter
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B"]
+# Typer relies on function calls (typer.Option/Argument) in parameter defaults.
+"src/localforge/cli/*" = ["B008"]
 
 [tool.mypy]
 python_version = "3.12"

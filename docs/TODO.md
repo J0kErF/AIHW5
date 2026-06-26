@@ -17,10 +17,10 @@
 - [x] T8 Ollama backend — OpenAI-compatible `/v1` (stdlib urllib+SSE); daemon down → skipped; RE_OLLAMA.md written
 - [x] T9 AirLLM backend (layer streaming) — absent→skipped cleanly; tracer hook reserved for T15  **← MVP backends done**
 
-## Phase 4 — Reporting & CLI
-- [ ] T10 Result store + suite builder — cartesian expansion, spec_hash keying
-- [ ] T11 Matrix + charts + report.html — ≥3 PNG, skipped rows shown, deterministic
-- [ ] T12 CLI (pull/baseline/run/compare) — `--help` light, CPU compare end-to-end
+## Phase 4 — Reporting & CLI ✅
+- [x] T10 Result store + suite builder — cartesian expansion, ollama aliases, spec_hash keying
+- [x] T11 Matrix + charts + report.html — 3 PNG, skipped rows shown, Jinja2 template
+- [x] T12 CLI (pull/baseline/run/compare) — `--help` light; **real CPU `compare` validated** (transformers 9.7 tok/s, 3147 MB; ollama+airllm skip cleanly → report.html)
 
 ## Phase 5 — Fine-tuning & Paging Visualizer (originality)
 - [ ] T13 PEFT adapters + OLoRA QR fallback — only A/B trainable; orthonormal init tested

@@ -13,3 +13,6 @@ dtypes:
 prompt: "Explain virtual memory in one sentence."
 max_new_tokens: 64
 seed: 0
+# Map the HF repo id to its Ollama tag so the same model is compared across backends.
+ollama_aliases:
+  "Qwen/Qwen2.5-0.5B-Instruct": "qwen2.5:0.5b"

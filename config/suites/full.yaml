@@ -15,3 +15,6 @@ dtypes:
 prompt: "Explain how an operating system pages memory between RAM and disk."
 max_new_tokens: 128
 seed: 0
+ollama_aliases:
+  "Qwen/Qwen2.5-0.5B-Instruct": "qwen2.5:0.5b"
+  "Qwen/Qwen2.5-3B-Instruct": "qwen2.5:3b"

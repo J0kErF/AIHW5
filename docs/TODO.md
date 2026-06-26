@@ -11,11 +11,11 @@
 - [x] T4 Profiler context manager + probes + baseline — VRAM=None on CPU; bg RSS sampler
 - [x] T5 Backend Protocol/registry/runner/FakeBackend — skip-not-crash on unavailable
 
-## Phase 3 — Models & real backends
-- [ ] T6 HF acquire/registry/format detection — re-pull no-op, missing token→AuthError
-- [ ] T7 Transformers backend (+NF4 path) — CPU greedy reproducible, NF4-on-CPU falls back
-- [ ] T8 Ollama backend — daemon down → skipped result
-- [ ] T9 AirLLM backend (layer streaming) — respects RAM ceiling; absent→skipped  **← MVP**
+## Phase 3 — Models & real backends ✅
+- [x] T6 HF acquire/registry/format detection — re-pull no-op, missing token→AuthError
+- [x] T7 Transformers backend (+NF4 path) — **real CPU greedy run validated** (Qwen2.5-0.5B, transformers 5.x); NF4-on-CPU falls back to fp32 with note
+- [x] T8 Ollama backend — OpenAI-compatible `/v1` (stdlib urllib+SSE); daemon down → skipped; RE_OLLAMA.md written
+- [x] T9 AirLLM backend (layer streaming) — absent→skipped cleanly; tracer hook reserved for T15  **← MVP backends done**
 
 ## Phase 4 — Reporting & CLI
 - [ ] T10 Result store + suite builder — cartesian expansion, spec_hash keying

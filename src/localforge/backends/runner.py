@@ -41,6 +41,9 @@ def run_spec(spec: RunSpec, backend: InferenceBackend | None = None) -> RunResul
     except BackendUnavailable as exc:
         return RunResult.skipped(spec, h, exc.reason)
 
+    # Backends may record a non-fatal note (e.g. an NF4->fp32 fallback).
+    note = getattr(bk, "note", None)
+
     return RunResult(
         spec_hash=h,
         backend=spec.backend,
@@ -52,4 +55,5 @@ def run_spec(spec: RunSpec, backend: InferenceBackend | None = None) -> RunResul
         peak_ram_mb=prof.peak_ram_mb,
         peak_vram_mb=prof.peak_vram_mb,
         backend_available=True,
+        note=note,
     )

@@ -67,6 +67,46 @@ def test_raises_after_max_retries() -> None:
     assert calls["n"] == 3  # initial + 2 retries
 
 
+def test_url_error_is_retried_but_http_error_is_not(_no_sleep: list[float]) -> None:
+    # Reproduces the production wiring: URLError is transient (retry), but its
+    # HTTPError subclass is definitive (no_retry).
+    import urllib.error
+
+    gk = ApiGatekeeper(RateLimitConfig(max_retries=3))
+
+    calls = {"n": 0}
+
+    def flaky_then_ok() -> str:
+        calls["n"] += 1
+        if calls["n"] < 2:
+            raise urllib.error.URLError("connection refused")
+        return "ok"
+
+    assert (
+        gk.execute(
+            flaky_then_ok,
+            retry_on=(urllib.error.URLError,),
+            no_retry=(urllib.error.HTTPError,),
+        )
+        == "ok"
+    )
+    assert calls["n"] == 2
+
+    http_calls = {"n": 0}
+
+    def http_404() -> None:
+        http_calls["n"] += 1
+        raise urllib.error.HTTPError("http://x", 404, "nf", {}, None)  # type: ignore[arg-type]
+
+    with pytest.raises(urllib.error.HTTPError):
+        gk.execute(
+            http_404,
+            retry_on=(urllib.error.URLError,),
+            no_retry=(urllib.error.HTTPError,),
+        )
+    assert http_calls["n"] == 1  # HTTPError excluded from retry
+
+
 def test_rate_limit_waits_between_calls(
     _no_sleep: list[float], monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -720,6 +720,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
+    { name = "httpx" },
     { name = "huggingface-hub" },
     { name = "jinja2" },
     { name = "matplotlib" },
@@ -761,6 +762,7 @@ requires-dist = [
     { name = "accelerate", specifier = ">=0.33" },
     { name = "airllm", marker = "extra == 'airllm'", specifier = ">=2.11" },
     { name = "bitsandbytes", marker = "extra == 'gpu'", specifier = ">=0.43" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "huggingface-hub", specifier = ">=0.24" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "matplotlib", specifier = ">=3.9" },

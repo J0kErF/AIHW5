@@ -9,7 +9,7 @@ backends don't reimplement them:
   number of times, while letting definitive errors (HTTP 404, auth) propagate.
 
     gk = ApiGatekeeper(RateLimitConfig(min_interval_s=0.0, max_retries=2))
-    resp = gk.execute(urlopen, request, retry_on=(TimeoutError, ConnectionError))
+    resp = gk.execute(urlopen, request, retry_on=(URLError,), no_retry=(HTTPError,))
 """
 
 from __future__ import annotations
@@ -51,12 +51,14 @@ class ApiGatekeeper:
         fn: Callable[..., T],
         *args: object,
         retry_on: tuple[type[BaseException], ...] = (),
+        no_retry: tuple[type[BaseException], ...] = (),
         **kwargs: object,
     ) -> T:
         """Call ``fn(*args, **kwargs)`` under the rate limit, retrying ``retry_on``.
 
-        Exceptions not in ``retry_on`` propagate immediately. After
-        ``max_retries`` retries the last exception is re-raised.
+        Exceptions matching ``no_retry`` (e.g. an ``HTTPError`` subclass of the
+        retried ``URLError``) propagate immediately, as do exceptions not in
+        ``retry_on``. After ``max_retries`` retries the last exception is re-raised.
         """
         self._respect_rate_limit()
         attempt = 0
@@ -66,6 +68,8 @@ class ApiGatekeeper:
                 self._last_call = perf_counter()
                 return result
             except retry_on as exc:
+                if no_retry and isinstance(exc, no_retry):
+                    raise
                 attempt += 1
                 if attempt > self._cfg.max_retries:
                     raise

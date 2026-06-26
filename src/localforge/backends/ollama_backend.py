@@ -65,7 +65,10 @@ class OllamaBackend:
                 urllib.request.urlopen,  # noqa: S310 (localhost)
                 request,
                 timeout=120,
-                retry_on=(TimeoutError, ConnectionError),
+                # Retry transient network errors (URLError), but never an
+                # HTTPError (a URLError subclass) — a 404/500 is definitive.
+                retry_on=(urllib.error.URLError, TimeoutError),
+                no_retry=(urllib.error.HTTPError,),
             )
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", "ignore")[:200]

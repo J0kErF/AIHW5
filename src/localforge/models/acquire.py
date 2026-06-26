@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import httpx
 from huggingface_hub import snapshot_download
 from huggingface_hub.errors import (
     GatedRepoError,
@@ -53,7 +54,9 @@ def pull_model(model_id: str, settings: Settings, *, force: bool = False) -> Mod
                 repo_id=model_id,
                 token=token,
                 cache_dir=str(hf_cache),
-                retry_on=(TimeoutError, ConnectionError),
+                # huggingface_hub uses httpx; retry transient transport failures
+                # (connect/read errors), not HTTP status errors (handled below).
+                retry_on=(httpx.TransportError, TimeoutError),
             )
         )
     except GatedRepoError as exc:

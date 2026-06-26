@@ -7,9 +7,9 @@
 - [x] T2 Core types/errors/hashing/logging — JSON round-trip + stable spec_hash (100% cov)
 - [x] T3 Capability probes + typed settings — never raise on bare machine; token redacted
 
-## Phase 2 — Profiling & backend core
-- [ ] T4 Profiler context manager + probes + baseline — VRAM=None on CPU, overhead <5%
-- [ ] T5 Backend Protocol/registry/runner/FakeBackend — skip-not-crash on unavailable
+## Phase 2 — Profiling & backend core ✅
+- [x] T4 Profiler context manager + probes + baseline — VRAM=None on CPU; bg RSS sampler
+- [x] T5 Backend Protocol/registry/runner/FakeBackend — skip-not-crash on unavailable
 
 ## Phase 3 — Models & real backends
 - [ ] T6 HF acquire/registry/format detection — re-pull no-op, missing token→AuthError

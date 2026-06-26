@@ -28,9 +28,11 @@ jobs:
       - name: Type check
         run: uv run mypy
 
-      - name: Test
-        run: uv run pytest --cov=localforge --cov-report=term-missing
+      - name: Test (offline; slow/real-model tests excluded)
+        run: uv run pytest -m "not slow" --cov=localforge --cov-report=term-missing
 
-      # CPU smoke of the comparison pipeline is added once the CLI lands (T12).
-      # - name: CPU smoke compare
-      #   run: uv run localforge compare --suite config/suites/demo.yaml --backend transformers
+      - name: CPU smoke — run pipeline with the dependency-free fake backend
+        run: uv run localforge run --backend fake --model fake/tiny --max-new-tokens 8
+
+      - name: CPU smoke — visualizer via replay (no model, no GPU)
+        run: uv run localforge visualize --replay tests/data/sample_paging.jsonl --no-tui

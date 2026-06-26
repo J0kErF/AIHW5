@@ -1,0 +1,35 @@
+[
+  {
+    "backend": "transformers",
+    "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+    "status": "ok",
+    "load_s": 6.288271400000667,
+    "prefill_ms": 412.61669999948936,
+    "decode_tok_s": 11.931691785975795,
+    "peak_ram_mb": 3132.15234375,
+    "peak_vram_mb": null,
+    "note": null
+  },
+  {
+    "backend": "ollama",
+    "model_id": "qwen2.5:0.5b",
+    "status": "skipped",
+    "load_s": null,
+    "prefill_ms": null,
+    "decode_tok_s": null,
+    "peak_ram_mb": null,
+    "peak_vram_mb": null,
+    "note": "no ollama daemon at localhost:11434 (run `ollama serve`)"
+  },
+  {
+    "backend": "airllm",
+    "model_id": "Qwen/Qwen2.5-0.5B-Instruct",
+    "status": "skipped",
+    "load_s": null,
+    "prefill_ms": null,
+    "decode_tok_s": null,
+    "peak_ram_mb": null,
+    "peak_vram_mb": null,
+    "note": "airllm not installed (extra: airllm)"
+  }
+]

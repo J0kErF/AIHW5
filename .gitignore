@@ -19,9 +19,8 @@ venv/
 htmlcov/
 coverage.xml
 
-# localforge runtime artifacts (regenerated; demo report is force-added below)
+# localforge runtime artifacts (regenerated; curated showcase is force-added below)
 results/runs/
-results/paging/
 results/baseline/
 results/suites/
 results/traces/
@@ -35,9 +34,11 @@ external/
 *.gguf
 *.bin
 
-# Keep the committed demo report
+# Keep the committed showcase (compare report + paging visualization)
 !results/reports/
 !results/reports/**
+!results/paging/
+!results/paging/**
 
 # OS
 .DS_Store

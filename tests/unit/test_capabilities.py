@@ -6,6 +6,12 @@ is installed on the host running the tests.
 
 from __future__ import annotations
 
+import sys
+import types
+
+import pytest
+
+import localforge.core.capabilities as cap
 from localforge.config.settings import load_settings
 from localforge.core.capabilities import (
     Capabilities,
@@ -56,6 +62,48 @@ def test_settings_load_defaults_from_toml() -> None:
     assert settings.ollama_base_url.endswith("/v1")
     assert settings.airllm_ram_ceiling_mb == 4096
     assert settings.default_model
+
+
+def _fake_torch(available: bool, *, raises: bool = False) -> types.ModuleType:
+    mod = types.ModuleType("torch")
+
+    class _Cuda:
+        @staticmethod
+        def is_available() -> bool:
+            if raises:
+                raise RuntimeError("broken driver")
+            return available
+
+        @staticmethod
+        def device_count() -> int:
+            return 2
+
+    mod.cuda = _Cuda()  # type: ignore[attr-defined]
+    return mod
+
+
+def test_probe_cuda_reports_available(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cap, "_has_module", lambda name: True)
+    monkeypatch.setitem(sys.modules, "torch", _fake_torch(True))
+    ok, reason = cap.probe_cuda()
+    assert ok is True
+    assert "2" in reason
+
+
+def test_probe_cuda_handles_driver_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cap, "_has_module", lambda name: True)
+    monkeypatch.setitem(sys.modules, "torch", _fake_torch(False, raises=True))
+    ok, reason = cap.probe_cuda()
+    assert ok is False
+    assert "failed" in reason.lower()
+
+
+def test_probe_bitsandbytes_present_without_cuda(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cap, "_has_module", lambda name: name == "bitsandbytes")
+    monkeypatch.setattr(cap, "probe_cuda", lambda: (False, "no CUDA device"))
+    ok, reason = probe_bitsandbytes()
+    assert ok is False
+    assert "no CUDA" in reason
 
 
 def test_settings_override_wins_and_token_is_redacted() -> None:

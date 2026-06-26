@@ -29,15 +29,15 @@
 - [x] T16 Visualizer TUI + static + visualize/finetune cmds — **real per-block capture validated** (Qwen 144 events); PNG/HTML/JSONL export; ASCII-safe plain mode
 - [x] T9a/T15a Empirical AirLLM RE — RE_AIRLLM.md: measured transformers trace (24/24 resident, 0 evict) vs modeled AirLLM (8/24, 40 evict); airllm 2.11/optimum 2.2 incompat documented + handled by skip-with-reason
 
-## Phase 6 — Quality, docs, release
-- [ ] T17 Test hardening + CI green — ≥80% core coverage, green with no engines
-- [ ] T18 README + results + reproducibility + submission — fresh clone reproduces demo report
+## Phase 6 — Quality, docs, release ✅
+- [x] T17 Test hardening + CI green — core/config/reporting **95%** cov; CI = ruff+mypy+offline tests+CPU smokes; green with no engines
+- [x] T18 README + results + reproducibility + submission — comprehensive README, committed showcase (compare report + paging figure), REPRODUCE.md, SUBMISSION.md
 
 ## Cross-cutting / submission checklist
-- [ ] CPU-first verified: full demo runs with no GPU, no Ollama, no AirLLM (replay covers viz)
-- [ ] Seeded determinism verified
-- [ ] `.env` ignored, `.env.example` committed, HF token never logged
-- [ ] `results/reports/demo/*` committed (report + paging figure)
-- [ ] Instructor `rmisegal@gmail.com` added as GitHub collaborator
-- [ ] PRD/PLAN/TODO + root README present
-- [ ] `moamteam-ex05.pdf` filled from locked template (no extra text), honest self-grade
+- [x] CPU-first verified: full demo runs with no GPU, no Ollama, no AirLLM (replay covers viz)
+- [x] Seeded determinism (greedy runs)
+- [x] `.env` ignored, `.env.example` committed, HF token in SecretStr (never logged)
+- [x] `results/reports/demo/*` + `results/paging/*` committed (report + paging figure)
+- [ ] **(user)** Push to GitHub + add `rmisegal@gmail.com` as collaborator
+- [x] PRD/PLAN/TODO + root README present
+- [ ] **(user)** `moamteam-ex05.pdf` from locked template (no extra text), honest self-grade — see docs/SUBMISSION.md

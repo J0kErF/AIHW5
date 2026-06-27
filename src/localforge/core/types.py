@@ -88,6 +88,24 @@ class RunResult(BaseModel):
     backend_available: bool = True
     note: str | None = None
 
+    # --- Spec §5.4 metric vocabulary (derived from the measured fields) ---
+    @property
+    def ttft_ms(self) -> float:
+        """Time To First Token = the prefill window (ms)."""
+        return self.prefill_ms
+
+    @property
+    def tpot_ms(self) -> float | None:
+        """Time Per Output Token / Inter-Token Latency = 1000 / decode throughput (ms)."""
+        if not self.decode_tok_s:
+            return None
+        return 1000.0 / self.decode_tok_s
+
+    @property
+    def throughput_tok_s(self) -> float | None:
+        """Decode throughput in tokens/sec."""
+        return self.decode_tok_s
+
     @classmethod
     def skipped(cls, spec: RunSpec, spec_hash: str, reason: str) -> RunResult:
         """Build a non-fatal 'backend unavailable' result for ``spec``."""

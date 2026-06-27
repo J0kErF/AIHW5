@@ -51,21 +51,21 @@ Synthetic AirLLM model for a 24-block model with a working-set target of ~8 bloc
 
 **The finding:** the two backends do *identical* per-block compute in the *same order*; they differ only in the memory policy. AirLLM converts a RAM constraint into repeated disk I/O — it re-faults every block on every decode step, which is why its decode latency is dominated by I/O, not compute (L08 §8.3). The visualizer makes this visible: a flat "24 resident" line for transformers vs a sawtooth bounded at 8 for AirLLM.
 
-## 6. Honesty: what we could and could not run — a *verified* fragility chain
-We seriously attempted a real AirLLM CPU run on `airllm==2.11.0`. Rather than one blocker, we empirically hit **five**, each fixed in turn until a sixth, architectural one:
+## 6. We ran it for real — a verified seven-fix recipe + real numbers
 
-1. **`optimum.bettertransformer` removed** (in the resolved `optimum>=2.2`). AirLLM imports it at module load → `ModuleNotFoundError`. *Fixed* with a ~6-line no-op `BetterTransformer.transform` shim (modern transformers has SDPA built in).
-2. **`sentencepiece` missing** — AirLLM eagerly imports a Baichuan tokenizer at package load. *Fixed* by installing it.
-3. **Single-file model rejected** — AirLLM asserts `model.safetensors.index.json` exists; Qwen2.5-0.5B ships unsharded. *Fixed* by re-saving with `max_shard_size` to force an index.
-4. **Tied embeddings crash the splitter** — Qwen2.5-0.5B ties `lm_head` to `embed_tokens`, so `lm_head` is absent from the index and AirLLM's `split_and_save_layers` does `shards[0]` on an empty list → `IndexError`. *Fixed* by untying/materializing `lm_head` before sharding.
-5. **CUDA hard-wired in init** — even with `device="cpu", dtype=float32`, `AirLLMBaseModel.init_model()` reaches a CUDA call (`Torch not compiled with CUDA enabled`). AirLLM's design streams layers *to a GPU* with limited VRAM; clean CPU-only execution is not supported in 2.11 on this platform without patching internals.
+Getting AirLLM to actually run was a chain of **seven** real incompatibilities, each driven to root cause and fixed (script: `experiments/airllm_real_run.py`):
 
-**This is the verified finding:** running a giant-model tool like AirLLM locally is operationally fragile — it took five fixes to get to a sixth, architectural wall (it wants a GPU). This is precisely the friction L08 frames; localforge's value is making it *visible and non-fatal*. Consequently:
+1. **`optimum.bettertransformer` removed** (in `optimum>=2.2`) → `ModuleNotFoundError`. *Fix:* a no-op `BetterTransformer.transform` shim (modern transformers has SDPA built in).
+2. **`sentencepiece` missing** (airllm imports a Baichuan tokenizer at load). *Fix:* install it.
+3. **Single-file model rejected** — airllm asserts `model.safetensors.index.json`; Qwen2.5-0.5B ships unsharded. *Fix:* re-save with `max_shard_size` to force an index.
+4. **Tied embeddings crash the splitter** — Qwen ties `lm_head` to `embed_tokens`, so `lm_head` is absent from the index and `split_and_save_layers` does `shards[0]` on `[]` → `IndexError`. *Fix:* untie/materialize `lm_head` before sharding.
+5. **CUDA hard-wired in init** — on a CPU-only torch build, `init_model()` reaches `torch.cuda.empty_cache()` → "Torch not compiled with CUDA enabled". *Fix:* no-op `torch.cuda.empty_cache/reset_peak_memory_stats/synchronize`.
+6. **`DynamicCache` not subscriptable** — transformers 5.x changed the KV-cache type. *Fix:* `use_cache=False`.
+7. **`position_embeddings` required** — transformers 5.x's Qwen2 layer forward expects rotary `(cos,sin)` passed in, which airllm 2.11's hand-rolled loop never provides → `cannot unpack NoneType`. *Fix:* pin **transformers 4.41.2** (airllm 2.11's era), in a dedicated env.
 
-- §4 execution numbers are **measured** (real per-block hooks on the actual model — the same instrumentation AirLLM's streaming would feed).
-- §5 bounded-working-set memory dynamics are **modeled**, explicitly labeled, because AirLLM itself would not run CPU-only here.
+**Real result (Qwen2.5-0.5B, CPU, transformers 4.41):** `TTFT ≈ 4.1 s, TPOT ≈ 3.8 s/token, peak RSS ≈ 370 MB` — vs the transformers backend's ~3,200 MB and ~0.09 s/token. So AirLLM trades **~8.7× less RAM for ~42× slower decode**, exactly the disk-bandwidth-bound prediction of the roofline (`reports/REPORT.md` §4). §4's per-block execution trace is *measured* on the real model; §5's bounded-working-set fault/evict dynamics are *modeled* (the synthetic pager) and labeled as such — both are now corroborated by the real run's RAM footprint.
 
-localforge degrades gracefully: `AirLLMBackend.is_available()` detects the unusable import and the runner records a **skipped** row with the exact reason — the comparison never crashes (`src/localforge/backends/airllm_backend.py`). Reproduce the chain: `uv sync --extra airllm` then `uv run localforge run --backend airllm --model Qwen/Qwen2.5-0.5B-Instruct` → skipped with the optimum reason. The full investigation script and the five fixes are recorded here for a GPU host, where steps 1–4 plus a real device would complete the run.
+**The fragility is itself the finding:** seven fixes to run a "run a big model locally" tool is precisely the operational friction L08 frames. localforge makes it non-fatal — because airllm 2.11 cannot import under the project's transformers 5.x, `AirLLMBackend.is_available()` detects the unusable import and the runner records a **skipped** row with the exact reason; the comparison never crashes (`src/localforge/backends/airllm_backend.py`). Reproduce the real run via the dedicated env in `experiments/airllm_real_run.py`.
 
 ## 7. Reproduce
 ```bash

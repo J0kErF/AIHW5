@@ -61,6 +61,24 @@ def test_runresult_skipped_factory() -> None:
     assert result.peak_vram_mb is None
 
 
+def test_runresult_metric_properties() -> None:
+    r = RunResult(
+        spec_hash="h",
+        backend=Backend.TRANSFORMERS,
+        model_id="m",
+        prefill_ms=400.0,
+        decode_tok_s=10.0,
+        peak_ram_mb=100.0,
+    )
+    assert r.ttft_ms == 400.0
+    assert r.tpot_ms == 100.0  # 1000 / 10
+    assert r.throughput_tok_s == 10.0
+
+    skipped = RunResult(spec_hash="h", backend=Backend.OLLAMA, model_id="m", decode_tok_s=None)
+    assert skipped.tpot_ms is None
+    assert skipped.throughput_tok_s is None
+
+
 def test_paging_event_round_trip() -> None:
     ev = PagingEvent(layer=3, action=PageAction.FAULT, bytes=1024, source=PageSource.MMAP, t_ms=1.5)
     restored = PagingEvent.model_validate_json(ev.model_dump_json())

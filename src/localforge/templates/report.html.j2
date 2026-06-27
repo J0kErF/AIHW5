@@ -43,7 +43,7 @@
       <thead>
         <tr>
           <th>Backend</th><th>Model</th><th>Status</th><th>Load (s)</th>
-          <th>Prefill (ms)</th><th>Decode (tok/s)</th><th>Peak RAM (MB)</th>
+          <th>TTFT (ms)</th><th>TPOT (ms)</th><th>Throughput (tok/s)</th><th>Peak RAM (MB)</th>
           <th>Peak VRAM (MB)</th><th>Note</th>
         </tr>
       </thead>
@@ -54,7 +54,8 @@
           <td>{{ row.model_id }}</td>
           <td>{{ row.status }}</td>
           <td>{{ "%.1f"|format(row.load_s) if row.load_s is not none else "n/a" }}</td>
-          <td>{{ "%.1f"|format(row.prefill_ms) if row.prefill_ms is not none else "n/a" }}</td>
+          <td>{{ "%.1f"|format(row.ttft_ms) if row.ttft_ms is not none else "n/a" }}</td>
+          <td>{{ "%.1f"|format(row.tpot_ms) if row.tpot_ms is not none else "n/a" }}</td>
           <td>{{ "%.1f"|format(row.decode_tok_s) if row.decode_tok_s is not none else "n/a" }}</td>
           <td>{{ "%.1f"|format(row.peak_ram_mb) if row.peak_ram_mb is not none else "n/a" }}</td>
           <td>{{ "%.1f"|format(row.peak_vram_mb) if row.peak_vram_mb is not none else "n/a" }}</td>

@@ -93,7 +93,12 @@ def run(
 
 
 # Register the heavier commands (side-effect imports).
-from localforge.cli import compare_cmd, finetune_cmd, visualize_cmd  # noqa: E402,F401
+from localforge.cli import (  # noqa: E402,F401
+    compare_cmd,
+    econ_cmd,
+    finetune_cmd,
+    visualize_cmd,
+)
 
 if __name__ == "__main__":
     app()

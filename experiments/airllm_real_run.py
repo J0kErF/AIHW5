@@ -66,11 +66,15 @@ def main(model_id: str = "Qwen/Qwen2.5-0.5B-Instruct") -> None:
     )
 
     t0 = time.time()
-    model.generate(tokens["input_ids"], max_new_tokens=1, use_cache=False, return_dict_in_generate=True)
+    model.generate(
+        tokens["input_ids"], max_new_tokens=1, use_cache=False, return_dict_in_generate=True
+    )
     ttft = time.time() - t0
 
     t0 = time.time()
-    out = model.generate(tokens["input_ids"], max_new_tokens=3, use_cache=False, return_dict_in_generate=True)
+    out = model.generate(
+        tokens["input_ids"], max_new_tokens=3, use_cache=False, return_dict_in_generate=True
+    )
     total3 = time.time() - t0
 
     peak_mb = proc.memory_info().rss / 1e6

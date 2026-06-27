@@ -48,7 +48,9 @@ def render_roofline_png(out: Path) -> Path:
 
     # Phase markers (qualitative positions).
     ax.scatter([80], [PEAK_GFLOPS], color="#cc5500", zorder=5)
-    ax.annotate("Prefill (TTFT)\ncompute-bound", (80, PEAK_GFLOPS), (30, PEAK_GFLOPS * 0.5), fontsize=9)
+    ax.annotate(
+        "Prefill (TTFT)\ncompute-bound", (80, PEAK_GFLOPS), (30, PEAK_GFLOPS * 0.5), fontsize=9
+    )
     ax.scatter([1.2], [RAM_BW_GBs * 1.2], color="#cc5500", zorder=5)
     ax.annotate("Decode (TPOT)\nmemory-bound", (1.2, RAM_BW_GBs * 1.2), (1.4, 8), fontsize=9)
     ax.scatter([1.2], [DISK_BW_GBs * 1.2], color="#2e8b57", zorder=5)
